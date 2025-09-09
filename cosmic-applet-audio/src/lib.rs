@@ -51,14 +51,17 @@ const GO_NEXT: &str = "media-skip-forward-symbolic";
 const PAUSE: &str = "media-playback-pause-symbolic";
 const PLAY: &str = "media-playback-start-symbolic";
 
-pub fn run() -> cosmic::iced::Result {
+pub struct AppFlags { pub application_mode: bool }
+
+pub fn run(flags: AppFlags) -> cosmic::iced::Result {
     localize();
-    cosmic::applet::run::<Audio>(())
+    cosmic::applet::run::<Audio>(flags)
 }
 
 #[derive(Default)]
 pub struct Audio {
     core: cosmic::app::Core,
+    application_mode: bool,
     is_open: IsOpen,
     output_volume: f64,
     output_volume_debounce: bool,
@@ -292,13 +295,14 @@ impl Audio {
 impl cosmic::Application for Audio {
     type Message = Message;
     type Executor = cosmic::SingleThreadExecutor;
-    type Flags = ();
+    type Flags = (AppFlags);
     const APP_ID: &'static str = "com.system76.CosmicAppletAudio";
 
-    fn init(core: cosmic::app::Core, _flags: ()) -> (Self, app::Task<Message>) {
+    fn init(core: cosmic::app::Core, flags: AppFlags) -> (Self, app::Task<Message>) {
         (
             Self {
                 core,
+                application_mode: flags.application_mode,
                 is_open: IsOpen::None,
                 current_output: None,
                 current_input: None,
@@ -696,6 +700,11 @@ impl cosmic::Application for Audio {
     }
 
     fn view(&self) -> Element<Message> {
+        if self.application_mode {
+            // In application mode, skip the little panel icon and show the full window directly
+            return self.view_window(self.core.main_window_id().unwrap_or(window::Id::unique()));
+        }
+
         let btn = self
             .core
             .applet
