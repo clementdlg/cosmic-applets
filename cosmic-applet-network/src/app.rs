@@ -42,10 +42,11 @@ use crate::{
         network_manager_subscription,
         wireless_enabled::wireless_enabled_subscription,
     },
+    AppFlags,
 };
 
-pub fn run() -> cosmic::iced::Result {
-    cosmic::applet::run::<CosmicNetworkApplet>(())
+pub fn run(flags: AppFlags) -> cosmic::iced::Result {
+    cosmic::applet::run::<CosmicNetworkApplet>(flags)
 }
 
 #[derive(Debug, Clone)]
@@ -95,6 +96,7 @@ static AIRPLANE_MODE: LazyLock<id::Toggler> = LazyLock::new(id::Toggler::unique)
 #[derive(Default)]
 struct CosmicNetworkApplet {
     core: cosmic::app::Core,
+    application_mode: bool,
     icon_name: String,
     popup: Option<window::Id>,
     nm_state: NetworkManagerState,
@@ -252,13 +254,14 @@ pub(crate) enum Message {
 impl cosmic::Application for CosmicNetworkApplet {
     type Message = Message;
     type Executor = cosmic::SingleThreadExecutor;
-    type Flags = ();
+    type Flags = AppFlags;
     const APP_ID: &'static str = config::APP_ID;
 
-    fn init(core: cosmic::app::Core, _flags: ()) -> (Self, app::Task<Message>) {
+    fn init(core: cosmic::app::Core, flags: AppFlags) -> (Self, app::Task<Message>) {
         (
             Self {
                 core,
+                application_mode: flags.application_mode,
                 icon_name: "network-offline-symbolic".to_string(),
                 token_tx: None,
                 ..Default::default()
@@ -617,6 +620,10 @@ impl cosmic::Application for CosmicNetworkApplet {
     }
 
     fn view(&self) -> Element<Message> {
+        if self.application_mode {
+            return self.view_window(self.core.main_window_id().unwrap_or(window::Id::unique()));
+        }
+
         self.core
             .applet
             .icon_button(&self.icon_name)

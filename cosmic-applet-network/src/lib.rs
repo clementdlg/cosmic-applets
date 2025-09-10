@@ -7,7 +7,9 @@ mod network_manager;
 
 use crate::localize::localize;
 
-pub fn run() -> cosmic::iced::Result {
+pub struct AppFlags { pub application_mode: bool }
+
+pub fn run(flags: AppFlags) -> cosmic::iced::Result {
     localize();
-    app::run()
+    app::run(flags)
 }
