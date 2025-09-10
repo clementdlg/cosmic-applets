@@ -41,6 +41,8 @@ use icu::{
     locale::{Locale, preferences::extensions::unicode::keywords::HourCycle},
 };
 
+use crate::AppFlags;
+
 static AUTOSIZE_MAIN_ID: LazyLock<Id> = LazyLock::new(|| Id::new("autosize-main"));
 
 fn get_system_locale() -> Locale {
@@ -70,6 +72,7 @@ fn get_system_locale() -> Locale {
 
 pub struct Window {
     core: cosmic::app::Core,
+    application_mode: bool,
     popup: Option<window::Id>,
     now: chrono::DateTime<chrono::FixedOffset>,
     timezone: Option<chrono_tz::Tz>,
@@ -273,10 +276,10 @@ impl Window {
 impl cosmic::Application for Window {
     type Message = Message;
     type Executor = cosmic::SingleThreadExecutor;
-    type Flags = ();
+    type Flags = AppFlags;
     const APP_ID: &'static str = "com.system76.CosmicAppletTime";
 
-    fn init(core: app::Core, _flags: Self::Flags) -> (Self, app::Task<Self::Message>) {
+    fn init(core: app::Core, flags: AppFlags) -> (Self, app::Task<Self::Message>) {
         let locale = get_system_locale();
 
         // Chrono evaluates the local timezone once whereby it's stored in a thread local
@@ -294,6 +297,7 @@ impl cosmic::Application for Window {
         (
             Self {
                 core,
+                application_mode: flags.application_mode,
                 popup: None,
                 now,
                 timezone: None,
@@ -618,6 +622,10 @@ impl cosmic::Application for Window {
     }
 
     fn view(&self) -> Element<Message> {
+        if self.application_mode {
+            return self.view_window(self.core.main_window_id().unwrap_or(window::Id::unique()));
+        }
+
         let horizontal = matches!(
             self.core.applet.anchor,
             PanelAnchor::Top | PanelAnchor::Bottom

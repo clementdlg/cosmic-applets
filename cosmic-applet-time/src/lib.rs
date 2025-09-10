@@ -9,8 +9,10 @@ mod window;
 
 use window::Window;
 
-pub fn run() -> cosmic::iced::Result {
+pub struct AppFlags { pub application_mode: bool }
+
+pub fn run(flags: AppFlags) -> cosmic::iced::Result {
     localize::localize();
 
-    cosmic::applet::run::<Window>(())
+    cosmic::applet::run::<Window>(flags)
 }
