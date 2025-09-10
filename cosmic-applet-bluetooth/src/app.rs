@@ -30,18 +30,20 @@ use tokio::sync::mpsc::Sender;
 use crate::{
     bluetooth::{BluerDevice, BluerEvent, bluetooth_subscription},
     config, fl,
+    AppFlags,
 };
 
 static BLUETOOTH_ENABLED: LazyLock<id::Toggler> = LazyLock::new(id::Toggler::unique);
 
 #[inline]
-pub fn run() -> cosmic::iced::Result {
-    cosmic::applet::run::<CosmicBluetoothApplet>(())
+pub fn run(flags: AppFlags) -> cosmic::iced::Result {
+    cosmic::applet::run::<CosmicBluetoothApplet>(flags)
 }
 
 #[derive(Default)]
 struct CosmicBluetoothApplet {
     core: cosmic::app::Core,
+    application_mode: bool,
     icon_name: String,
     popup: Option<window::Id>,
     bluer_state: BluerState,
@@ -85,13 +87,14 @@ enum Message {
 impl cosmic::Application for CosmicBluetoothApplet {
     type Message = Message;
     type Executor = cosmic::SingleThreadExecutor;
-    type Flags = ();
+    type Flags = AppFlags;
     const APP_ID: &'static str = config::APP_ID;
 
-    fn init(core: cosmic::app::Core, _flags: Self::Flags) -> (Self, app::Task<Self::Message>) {
+    fn init(core: cosmic::app::Core, flags: AppFlags) -> (Self, app::Task<Self::Message>) {
         (
             Self {
                 core,
+                application_mode: flags.application_mode,
                 icon_name: "bluetooth-symbolic".to_string(),
                 token_tx: None,
                 ..Default::default()
@@ -348,6 +351,10 @@ impl cosmic::Application for CosmicBluetoothApplet {
     }
 
     fn view(&self) -> Element<Message> {
+        if self.application_mode {
+            return self.view_window(self.core.main_window_id().unwrap_or(window::Id::unique()));
+        }
+
         self.core
             .applet
             .icon_button(&self.icon_name)

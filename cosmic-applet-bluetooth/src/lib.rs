@@ -8,8 +8,10 @@ mod localize;
 
 use crate::localize::localize;
 
+pub struct AppFlags { pub application_mode: bool }
+
 #[inline]
-pub fn run() -> cosmic::iced::Result {
+pub fn run(flags: AppFlags) -> cosmic::iced::Result {
     localize();
-    app::run()
+    app::run(flags)
 }
